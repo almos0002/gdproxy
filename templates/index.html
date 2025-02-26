@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GDrive Video Proxy</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #3367d6;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+      display: none;
+    }
+    #videoContainer {
+      margin-top: 20px;
+      display: none;
+    }
+    video {
+      width: 100%;
+      border-radius: 4px;
+    }
+    .quality-buttons {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+    }
+    .quality-btn {
+      padding: 5px 15px;
+      background-color: #eee;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .quality-btn:hover, .quality-btn.active {
+      background-color: #ddd;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Google Drive Video Proxy</h1>
+    <p>Enter a Google Drive file ID to create a proxy stream:</p>
+    
+    <input type="text" id="fileId" placeholder="Google Drive File ID (e.g., 1bJBs59LNjxYghoTnc_q8FSaW0pHEaYg0)">
+    <button onclick="getVideo()">Generate Stream</button>
+    
+    <div id="result"></div>
+    
+    <div id="videoContainer">
+      <h2>Video Player</h2>
+      <video id="videoPlayer" controls></video>
+      <div class="quality-buttons">
+        <button class="quality-btn" onclick="changeQuality('360')">360p</button>
+        <button class="quality-btn" onclick="changeQuality('720')">720p</button>
+        <button class="quality-btn" onclick="changeQuality('1080')">1080p</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentSlug = '';
+    let currentQuality = '720';
+    
+    async function getVideo() {
+      const fileId = document.getElementById('fileId').value.trim();
+      if (!fileId) {
+        alert('Please enter a valid Google Drive file ID');
+        return;
+      }
+      
+      document.getElementById('result').style.display = 'block';
+      document.getElementById('result').innerHTML = 'Loading...';
+      
+      try {
+        const response = await fetch('/api/get-video?file_id=' + fileId);
+        const data = await response.json();
+        
+        if (data.status === 'ok') {
+          document.getElementById('result').innerHTML = 
+            `Success! Stream URL created:<br>
+             <strong>Watch URL:</strong> <a href="/watch/${data.data.slug}" target="_blank">/watch/${data.data.slug}</a>`;
+          
+          currentSlug = data.data.slug;
+          document.getElementById('videoContainer').style.display = 'block';
+          changeQuality(currentQuality);
+        } else {
+          document.getElementById('result').innerHTML = 'Error: ' + data.message;
+        }
+      } catch (error) {
+        document.getElementById('result').innerHTML = 'Error: ' + error.message;
+      }
+    }
+    
+    function changeQuality(quality) {
+      if (!currentSlug) return;
+      
+      currentQuality = quality;
+      const videoUrl = `/stream/${currentSlug}/${quality}`;
+      const videoPlayer = document.getElementById('videoPlayer');
+      
+      // Store the current time to resume playback after changing quality
+      const currentTime = videoPlayer.currentTime;
+      
+      videoPlayer.src = videoUrl;
+      videoPlayer.load();
+      
+      // Resume playback at the stored time
+      videoPlayer.addEventListener('loadedmetadata', function() {
+        videoPlayer.currentTime = currentTime;
+        videoPlayer.play();
+      }, { once: true });
+      
+      // Update active button
+      document.querySelectorAll('.quality-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.querySelector(`.quality-btn[onclick="changeQuality('${quality}')"]`).classList.add('active');
+    }
+  </script>
+</body>
+</html>

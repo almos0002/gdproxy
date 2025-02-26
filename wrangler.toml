@@ -1,0 +1,8 @@
+name = "gdrive-proxy"
+main = "worker.js"
+compatibility_date = "2023-10-30"
+
+[triggers]
+routes = [
+  { pattern = "*/*", zone_name = "your-domain.com" }
+]
