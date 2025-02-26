@@ -3,4 +3,4 @@ main = "worker.js"
 compatibility_date = "2022-07-12"
 
 workers_dev = false
-route = { pattern = "gdproxy.amoviesflix.workers.dev/*", zone_name = "gdproxy.amoviesflix.workers.dev" }
+route = { pattern = "gdproxy.amoviesflix.workers.dev/*" }
